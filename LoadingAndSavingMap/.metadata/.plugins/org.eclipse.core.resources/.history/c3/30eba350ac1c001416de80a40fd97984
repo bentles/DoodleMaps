@@ -1,0 +1,217 @@
+package controller;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.net.URL;
+import java.util.ResourceBundle;
+
+import javax.xml.transform.Result;
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.TransformerFactoryConfigurationError;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.w3c.dom.Document;
+
+import application.Main;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.control.Button;
+import javafx.scene.control.TextField;
+import javafx.scene.web.WebView;
+import javafx.stage.FileChooser;
+import javafx.stage.Window;
+
+public class MyController implements Initializable {
+
+	@Override
+	public void initialize(URL location, ResourceBundle resources) {
+		
+		
+	}
+	
+	@FXML
+	private Button btnPlot;
+	@FXML
+	private TextField txtStart;
+	@FXML
+	private TextField txtEnd;
+	@FXML
+	private WebView wbView1;
+	
+	
+	public void PlotDirections(ActionEvent event){
+		
+		System.out.println("Start : " + txtStart.getText());
+		System.out.println("End : " + txtEnd.getText());
+		
+		
+		final String ht = "<!DOCTYPE html>"+
+	    		"<html>"+
+	    		 " <head>"+
+	    		  "  <meta name=\"viewport\" content=\"initial-scale=1.0, user-scalable=no\">"+
+	    		   " <meta charset=\"utf-8\">"+
+	    		    "<title>Draggable directions</title>"+
+	    		    "<style>"+
+	    		     " html, body, #map-canvas {"+
+	    		      "  height: 100%;"+
+	    		       " margin: 0px;"+
+	    		        "padding: 0px"+
+	    		      "}"+
+	    		  "  </style>"+
+	    		"    <script src=\"https://maps.googleapis.com/maps/api/js?key=AIzaSyDeSWWyq34KWp3EHRb3JOwcCH71aZvnWxM\"></script>"+
+	    		 "   <script>"+
+
+	    		"var rendererOptions = {"+
+	    		"  draggable: true"+
+	    		"};"+
+	    		"var directionsDisplay = new google.maps.DirectionsRenderer(rendererOptions);;"+
+	    		"var directionsService = new google.maps.DirectionsService();"+
+	    		"var map;"+
+
+	    		"var pe = new google.maps.LatLng(-33.959311, 25.618076);"+
+
+	    		"function initialize() {"+
+
+	    		 " var mapOptions = {"+
+	    		 "   zoom: 7,"+
+	    		 "   center: pe"+
+	    		 " };"+
+	    		 " map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);"+
+	    		 " directionsDisplay.setMap(map);"+
+	    		 " directionsDisplay.setPanel(document.getElementById('directionsPanel'));"+
+
+	    		"  google.maps.event.addListener(directionsDisplay, 'directions_changed', function() {"+
+	    		"    computeTotalDistance(directionsDisplay.getDirections());"+
+	    		"  });"+
+
+	    		"  calcRoute();"+
+	    		"}"+
+
+	    		"function calcRoute() {"+
+
+	    		 " var request = {"+
+	    		 "   origin: '"
+	    		 +txtStart.getText()+"',"+
+	    		 "   destination: '"
+	    		 +txtEnd.getText()+"',"+
+	    		 "   travelMode: google.maps.TravelMode.DRIVING"+
+	    		 " };"+
+	    		 " directionsService.route(request, function(response, status) {"+
+	    		 "   if (status == google.maps.DirectionsStatus.OK) {"+
+	    		 "     directionsDisplay.setDirections(response);"+
+	    		 "   }"+
+	    		 " });"+
+	    		"}"+
+
+	    		"function computeTotalDistance(result) {"+
+	    		"  var total = 0;"+
+	    		"  var myroute = result.routes[0];"+
+	    		"  for (var i = 0; i < myroute.legs.length; i++) {"+
+	    		"    total += myroute.legs[i].distance.value;"+
+	    		"  }"+
+	    		"  total = total / 1000.0;"+
+	    		"  document.getElementById('total').innerHTML = total + ' km';"+
+	    		"}"+
+
+	    		"google.maps.event.addDomListener(window, 'load', initialize);"+
+
+	    		"    </script>"+
+	    		"  </head>"+
+	    		"  <body>"+
+	    		"    <div id=\"map-canvas\" style=\"float:left;width:65%; height:100%\"></div>"+
+	    		"    <div id=\"directionsPanel\" style=\"float:right;width:35%;height:50%\">"+
+	    		"    <p>Total Distance: <span id=\"total\"></span></p>"+
+	    		"    </div>"+
+	    		"  </body>"+
+	    		"</html>";
+		try {
+			PrintWriter pw = new PrintWriter("this.html");
+			pw.write(ht);
+			pw.close();
+			
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+        final String html = "this.html";
+
+        final java.net.URI uri = java.nio.file.Paths.get(html).toAbsolutePath().toUri();
+        
+        // create WebView with specified local content
+        //final javafx.scene.web.WebView wbView1 = new javafx.scene.web.WebView();
+        wbView1.getEngine().load(uri.toString());
+		
+	}
+	
+	
+	@FXML
+	Button btnSave;
+	
+	public void SaveDirections(ActionEvent event){
+		
+		FileChooser fc = new FileChooser();
+		fc.setTitle("Select Location to Save");
+
+		File file = fc.showSaveDialog(Main.primStage);
+		
+		if (file != null){
+		
+			//ReadOnlyObjectProperty<Document> rop = wbView1.getEngine().documentProperty();
+	        Document dom = wbView1.getEngine().getDocument();
+			
+	        Transformer transformer = null;
+			try {
+				transformer = TransformerFactory.newInstance().newTransformer();
+			} catch (TransformerConfigurationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (TransformerFactoryConfigurationError e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	        Result output = new StreamResult(file);
+	        Source input = new DOMSource(dom);
+
+	        try {
+				transformer.transform(input, output);
+			} catch (TransformerException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			
+		}
+	}
+	
+	@FXML
+	WebView wbView2;
+	
+	public void LoadMap(ActionEvent event){
+		
+		FileChooser fc = new FileChooser();
+		fc.setTitle("Select File");
+
+		File file = fc.showOpenDialog(Main.primStage);
+		
+		if (file != null){
+			final java.net.URI uri = java.nio.file.Paths.get(file.getPath()).toAbsolutePath().toUri();
+	        
+	        // create WebView with specified local content
+	        //final javafx.scene.web.WebView wbView1 = new javafx.scene.web.WebView();
+	        wbView2.getEngine().load(uri.toString());
+			
+			
+		}
+		
+	}
+	
+}
